@@ -222,6 +222,8 @@ class FileManager(object):
         with open(file_n, 'a'):
             os.utime(file_n, None)
 
+        print('Created', file_n, 'successfully')
+
     def show_content(self, dir_name):
         dir_name = self.join_with_current_dir(dir_name)
         if not os.path.exists(dir_name) or not os.path.isdir(dir_name):
@@ -245,6 +247,8 @@ class FileManager(object):
         print('Removed', file_n, 'successfully')
 
     def move(self, src, dst):
+        src = self.join_with_current_dir(src)
+        dst = self.join_with_current_dir(dst)
         try:
             shutil.move(src, dst)
         except FileNotFoundError as e:
@@ -253,6 +257,8 @@ class FileManager(object):
         print('Moved', src, 'to', dst, 'successfully')
 
     def copy(self, src, dst):
+        src = self.join_with_current_dir(src)
+        dst = self.join_with_current_dir(dst)
         try:
             if os.path.isdir(src):
                 shutil.copytree(src, dst)
