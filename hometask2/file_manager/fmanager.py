@@ -6,7 +6,7 @@ import shutil
 #Written by Igor Naumov MIPT 296
 #MIPT-Python 2014
 
-import sys
+import sys, os, shutil
 
 class ExitCommand(object):
     def get_name(self):
@@ -15,7 +15,7 @@ class ExitCommand(object):
         return 0
     def execute(self, args_line, state=None):
         args = ShellUtils.parse_cmd_params(args_line)
-        print('Args: {}'.format(args))
+        #print('Args: {}'.format(args))
         ShellUtils.check_args_num(self, len(args))
 
         sys.exit(0)
@@ -27,8 +27,10 @@ class ChangeDirCommand(object):
         return 1
     def execute(self, args_line, state):
         args = ShellUtils.parse_cmd_params(args_line)
-        print('Args: {}'.format(args))
+        #print('Args: {}'.format(args))
         ShellUtils.check_args_num(self, len(args))
+
+        state.file_manager.set_current_dir(args[0])
 
 class MoveCommand(object):
     def get_name(self):
@@ -37,8 +39,10 @@ class MoveCommand(object):
         return 2
     def execute(self, args_line, state):
         args = ShellUtils.parse_cmd_params(args_line)
-        print('Args: {}'.format(args))
+        #print('Args: {}'.format(args))
         ShellUtils.check_args_num(self, len(args))
+
+        state.file_manager.move(args[0], args[1])
 
 class CopyCommand(object):
     def get_name(self):
@@ -47,8 +51,10 @@ class CopyCommand(object):
         return 2
     def execute(self, args_line, state):
         args = ShellUtils.parse_cmd_params(args_line)
-        print('Args: {}'.format(args))
+        #print('Args: {}'.format(args))
         ShellUtils.check_args_num(self, len(args))
+
+        state.file_manager.copy(args[0], args[1])
 
 class MkdirCommand(object):
     def get_name(self):
@@ -57,8 +63,22 @@ class MkdirCommand(object):
         return 1
     def execute(self, args_line, state):
         args = ShellUtils.parse_cmd_params(args_line)
-        print('Args: {}'.format(args))
+        #print('Args: {}'.format(args))
         ShellUtils.check_args_num(self, len(args))
+
+        state.file_manager.make_dir(args[0])
+
+class RemoveCommand(object):
+    def get_name(self):
+        return 'rm'
+    def get_args_num(self):
+        return 1
+    def execute(self, args_line, state):
+        args = ShellUtils.parse_cmd_params(args_line)
+        #print('Args: {}'.format(args))
+        ShellUtils.check_args_num(self, len(args))
+
+        state.file_manager.remove(args[0])
 
 class InvalidArgumentException(Exception):
     def __init__(self, value):
@@ -91,7 +111,7 @@ class ShellUtils(object):
 
 class Shell(object):
     def __init__(self):
-        self.invite_str = '$ '
+        self.invite_str = ' $ '
         self.cmd_map = {}
         self.shell_state = FileManagerShellState()
 
@@ -132,7 +152,7 @@ class Shell(object):
 
     def interactive_mode(self):
         while True:
-            print(self.invite_str, end="")
+            print(self.shell_state.file_manager.current_dir + self.invite_str, end="")
             next_entry = ()
             try:
                 next_entry = self.parse_cmd_line(input())
@@ -150,10 +170,22 @@ class Shell(object):
         self.interactive_mode()
 
 class FileManager(object):
-    currentdir = '.'
-    def remove(self, file_n):
+    def __init__(self):
+        self.current_dir = os.getcwd()
+
+    def set_current_dir(self, new_dir):
+        self.current_dir = os.path.join(self.current_dir, new_dir)
+        if n
         return 0
-    def create(self, file_n):
+
+    def make_dir(self, dir_name):
+        if os.path.exists(dir_name) and os.path.isdir(dir_name):
+            raise InvalidArgumentException('Directory {} already exists'.format(dir_name))
+
+        os.mkdir(os.path.join(self.current_dir, dir_name))
+        print('Created', os.path.join(self.current_dir, dir_name))
+
+    def remove(self, file_n):
         return 0
     def move(self, file_n_from, file_n_to):
         return 0
@@ -166,5 +198,6 @@ shell.add_cmd(ChangeDirCommand())
 shell.add_cmd(MkdirCommand())
 shell.add_cmd(CopyCommand())
 shell.add_cmd(MoveCommand())
+shell.add_cmd(RemoveCommand())
 
 shell.run()
