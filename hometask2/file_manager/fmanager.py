@@ -185,33 +185,54 @@ class FileManager(object):
     def __init__(self):
         self.current_dir = os.getcwd()
 
+    def join_with_current_dir(self, file_n):
+        return os.path.abspath(os.path.join(self.current_dir, file_n))
+
     def set_current_dir(self, new_dir):
-        new_dir = os.path.join(self.current_dir, new_dir)
+        new_dir = self.join_with_current_dir(new_dir)
         if not os.path.exists(new_dir) or not os.path.isdir(new_dir):
             raise InvalidArgumentException('Directory {} does not exist'.format(new_dir))
-        new_dir = os.path.abspath(new_dir)
+
         self.current_dir = new_dir
 
     def make_dir(self, dir_name):
         if os.path.exists(dir_name) and os.path.isdir(dir_name):
             raise InvalidArgumentException('Directory {} already exists'.format(dir_name))
 
-        os.mkdir(os.path.join(self.current_dir, dir_name))
-        print('Created', os.path.abspath(os.path.join(self.current_dir, dir_name)))
+        dir_name = self.join_with_current_dir(dir_name)
+        os.mkdir(dir_name)
+        print('Created', dir_name, 'successfully')
 
     def show_content(self, dir_name):
-        dir_name = os.path.join(self.current_dir, dir_name)
+        dir_name = self.join_with_current_dir(dir_name)
         if not os.path.exists(dir_name) or not os.path.isdir(dir_name):
             raise InvalidArgumentException('Directory {} does not exist'.format(dir_name))
 
         print('\n'.join(os.listdir(dir_name)))
 
     def remove(self, file_n):
-        return 0
-    def move(self, file_n_from, file_n_to):
-        return 0
-    def copy(self, file_n_from, file_n_to):
-        return 0
+        file_n = self.join_with_current_dir(file_n)
+        if not os.path.exists(file_n):
+            raise InvalidArgumentException('File or directory {} does not exist'.format(file_n))
+
+        if os.path.isfile(file_n):
+            os.remove(file_n)
+        elif os.path.isdir(file_n):
+            os.rmdir(file_n)
+
+        print('Removed', file_n, 'successfully')
+
+    def move(self, src, dst):
+        try:
+            shutil.move(src, dst)
+        except FileNotFoundError as e:
+            raise InvalidArgumentException(e)
+
+    def copy(self, src, dst):
+        try:
+            shutil.copy(src, dst)
+        except FileNotFoundError as e:
+            raise InvalidArgumentException(e)
 
 shell = Shell()
 shell.add_cmd(ExitCommand())
