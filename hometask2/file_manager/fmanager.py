@@ -80,18 +80,6 @@ class RemoveCommand(object):
 
         state.file_manager.remove(args[0])
 
-class ClearScreenCommand(object):
-    def get_name(self):
-        return 'clear'
-    def get_args_num(self):
-        return 1
-    def execute(self, args_line, state):
-        args = ShellUtils.parse_cmd_params(args_line)
-        #print('Args: {}'.format(args))
-        ShellUtils.check_args_num(self, len(args))
-
-        state.file_manager.remove(args[0])
-
 class LsCommand(object):
     def get_name(self):
         return 'ls'
@@ -201,6 +189,7 @@ class FileManager(object):
         new_dir = os.path.join(self.current_dir, new_dir)
         if not os.path.exists(new_dir) or not os.path.isdir(new_dir):
             raise InvalidArgumentException('Directory {} does not exist'.format(new_dir))
+        new_dir = os.path.abspath(new_dir)
         self.current_dir = new_dir
 
     def make_dir(self, dir_name):
@@ -208,7 +197,7 @@ class FileManager(object):
             raise InvalidArgumentException('Directory {} already exists'.format(dir_name))
 
         os.mkdir(os.path.join(self.current_dir, dir_name))
-        print('Created', os.path.join(self.current_dir, dir_name))
+        print('Created', os.path.abspath(os.path.join(self.current_dir, dir_name)))
 
     def show_content(self, dir_name):
         dir_name = os.path.join(self.current_dir, dir_name)
@@ -232,6 +221,5 @@ shell.add_cmd(CopyCommand())
 shell.add_cmd(MoveCommand())
 shell.add_cmd(RemoveCommand())
 shell.add_cmd(LsCommand())
-shell.add_cmd(ClearScreenCommand())
 
 shell.run()
