@@ -1,7 +1,5 @@
 __author__ = 'inaumov'
 
-import shutil
-
 #Simple file manager
 #Written by Igor Naumov MIPT 296
 #MIPT-Python 2014
