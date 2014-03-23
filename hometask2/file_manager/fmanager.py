@@ -32,6 +32,18 @@ class ChangeDirCommand(object):
 
         state.file_manager.set_current_dir(args[0])
 
+class TouchCommand(object):
+    def get_name(self):
+        return 'touch'
+    def get_args_num(self):
+        return 1
+    def execute(self, args_line, state):
+        args = ShellUtils.parse_cmd_params(args_line)
+        #print('Args: {}'.format(args))
+        ShellUtils.check_args_num(self, len(args))
+
+        state.file_manager.create_file(args[0])
+
 class MoveCommand(object):
     def get_name(self):
         return 'mv'
@@ -196,12 +208,21 @@ class FileManager(object):
         self.current_dir = new_dir
 
     def make_dir(self, dir_name):
+        dir_name = self.join_with_current_dir(dir_name)
         if os.path.exists(dir_name) and os.path.isdir(dir_name):
             raise InvalidArgumentException('Directory {} already exists'.format(dir_name))
 
-        dir_name = self.join_with_current_dir(dir_name)
-        os.mkdir(dir_name)
+        try:
+            os.mkdir(dir_name)
+        except Exception as e:
+            raise InvalidArgumentException(e)
+
         print('Created', dir_name, 'successfully')
+
+    def create_file(self, file_n):
+        file_n = self.join_with_current_dir(file_n)
+        with open(file_n, 'a'):
+            os.utime(file_n, None)
 
     def show_content(self, dir_name):
         dir_name = self.join_with_current_dir(dir_name)
@@ -215,10 +236,13 @@ class FileManager(object):
         if not os.path.exists(file_n):
             raise InvalidArgumentException('File or directory {} does not exist'.format(file_n))
 
-        if os.path.isfile(file_n):
-            os.remove(file_n)
-        elif os.path.isdir(file_n):
-            os.rmdir(file_n)
+        try:
+            if os.path.isfile(file_n):
+                os.remove(file_n)
+            elif os.path.isdir(file_n):
+                shutil.rmtree(file_n)
+        except Exception as e:
+            raise InvalidArgumentException(e)
 
         print('Removed', file_n, 'successfully')
 
@@ -228,11 +252,18 @@ class FileManager(object):
         except FileNotFoundError as e:
             raise InvalidArgumentException(e)
 
+        print('Moved', src, 'to', dst, 'successfully')
+
     def copy(self, src, dst):
         try:
-            shutil.copy(src, dst)
-        except FileNotFoundError as e:
+            if os.path.isdir(src):
+                shutil.copytree(src, dst)
+            else:
+                shutil.copy(src, dst)
+        except Exception as e:
             raise InvalidArgumentException(e)
+
+        print('Copied', src, 'to', dst, 'successfully')
 
 shell = Shell()
 shell.add_cmd(ExitCommand())
@@ -242,5 +273,6 @@ shell.add_cmd(CopyCommand())
 shell.add_cmd(MoveCommand())
 shell.add_cmd(RemoveCommand())
 shell.add_cmd(LsCommand())
+shell.add_cmd(TouchCommand())
 
 shell.run()
