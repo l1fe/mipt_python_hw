@@ -8,15 +8,57 @@ import shutil
 
 import sys
 
-class ExitCommand:
+class ExitCommand(object):
     def get_name(self):
         return 'exit'
     def get_args_num(self):
         return 0
-    def execute(self, args):
-        print('Bye.')
+    def execute(self, args_line, state=None):
+        args = ShellUtils.parse_cmd_params(args_line)
+        print('Args: {}'.format(args))
+        ShellUtils.check_args_num(self, len(args))
+
         sys.exit(0)
 
+class ChangeDirCommand(object):
+    def get_name(self):
+        return 'cd'
+    def get_args_num(self):
+        return 1
+    def execute(self, args_line, state):
+        args = ShellUtils.parse_cmd_params(args_line)
+        print('Args: {}'.format(args))
+        ShellUtils.check_args_num(self, len(args))
+
+class MoveCommand(object):
+    def get_name(self):
+        return 'mv'
+    def get_args_num(self):
+        return 2
+    def execute(self, args_line, state):
+        args = ShellUtils.parse_cmd_params(args_line)
+        print('Args: {}'.format(args))
+        ShellUtils.check_args_num(self, len(args))
+
+class CopyCommand(object):
+    def get_name(self):
+        return 'cp'
+    def get_args_num(self):
+        return 2
+    def execute(self, args_line, state):
+        args = ShellUtils.parse_cmd_params(args_line)
+        print('Args: {}'.format(args))
+        ShellUtils.check_args_num(self, len(args))
+
+class MkdirCommand(object):
+    def get_name(self):
+        return 'mkdir'
+    def get_args_num(self):
+        return 1
+    def execute(self, args_line, state):
+        args = ShellUtils.parse_cmd_params(args_line)
+        print('Args: {}'.format(args))
+        ShellUtils.check_args_num(self, len(args))
 
 class InvalidArgumentException(Exception):
     def __init__(self, value):
@@ -24,11 +66,30 @@ class InvalidArgumentException(Exception):
     def __str__(self):
         return repr(self.value)
 
-class FileManagerShellState:
+class FileManagerShellState(object):
     def __init__(self):
         self.file_manager = FileManager()
 
-class Shell:
+class ShellUtils(object):
+    @staticmethod
+    def parse_cmd_params(cmd_params_line):
+        if cmd_params_line is None or str(cmd_params_line).strip() == '':
+            return []
+
+        cmd_params_line = str(cmd_params_line).strip()
+        args = cmd_params_line.split()
+
+        for i in range(len(args)):
+            args[i] = args[i].strip()
+
+        return args
+
+    @staticmethod
+    def check_args_num(cmd, args_num):
+        if cmd.get_args_num() != args_num:
+            raise InvalidArgumentException('{}: expected {} args, got {}'.format(cmd.get_name(), cmd.get_args_num(), args_num))
+
+class Shell(object):
     def __init__(self):
         self.invite_str = '$ '
         self.cmd_map = {}
@@ -43,10 +104,6 @@ class Shell:
     def get_cmd(self, cmd_name):
         return self.cmd_map.get(cmd_name, None)
 
-    def parse_cmd_params(self, cmd_params_line):
-
-        return 0
-
     def execute_cmds(self, cmds):
         for i in range(len(cmds)):
             cmd = self.get_cmd(cmds[i][0])
@@ -54,7 +111,7 @@ class Shell:
             if cmd is None:
                 raise InvalidArgumentException('Command \'{}\' not found'.format(cmds[i][0]))
 
-            cmd.execute(cmds[i][1])
+            cmd.execute(cmds[i][1], self.shell_state)
 
     def parse_cmd_line(self, input_line):
         if input_line is None or str(input_line).strip() is None or str(input_line).strip() == '':
@@ -83,8 +140,6 @@ class Shell:
                 print('Shell error: {}'.format(e))
                 continue
 
-            print('Command name:', next_entry[0])
-            print('Command params:', next_entry[1])
             try:
                 self.execute_cmds([next_entry])
             except InvalidArgumentException as e:
@@ -94,8 +149,7 @@ class Shell:
     def run(self):
         self.interactive_mode()
 
-
-class FileManager:
+class FileManager(object):
     currentdir = '.'
     def remove(self, file_n):
         return 0
@@ -106,13 +160,11 @@ class FileManager:
     def copy(self, file_n_from, file_n_to):
         return 0
 
-def cd_command(destination):
-    return 0
-
-def mkdir_command(destination):
-    return 0
-
 shell = Shell()
 shell.add_cmd(ExitCommand())
-shell.run()
+shell.add_cmd(ChangeDirCommand())
+shell.add_cmd(MkdirCommand())
+shell.add_cmd(CopyCommand())
+shell.add_cmd(MoveCommand())
 
+shell.run()
