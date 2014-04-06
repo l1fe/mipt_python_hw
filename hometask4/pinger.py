@@ -7,17 +7,6 @@ def abort_prg(error):
     print('Correct usage: filename ip [ip2 [ip3 ..]] ')
     sys.exit(1)
 
-def check_args():
-    if (len(sys.argv) < 3):
-        abort_prg('too less parameters')
-
-    for current_ip in sys.argv[2::]:
-        import re
-        ip_expression = re.compile(r'^(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}$')
-        if not(ip_expression.match(current_ip)):
-            abort_prg('wrong ip: ' + current_ip)
-
-
 def ping_ip(ip, file_lock, file):
         import subprocess
         result = subprocess.call(["ping", '-n', '1', ip], stdout = subprocess.PIPE)
@@ -29,6 +18,15 @@ def ping_ip(ip, file_lock, file):
         finally:
             file_lock.release()
 
+def check_args():
+    if (len(sys.argv) < 3):
+        abort_prg('Too few args')
+
+    for cur_ip in sys.argv[2::]:
+        import re
+        ip_expression = re.compile(r'^(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}$')
+        if not(ip_expression.match(cur_ip)):
+            abort_prg('Wrong ip: ' + cur_ip)
 
 def pinger(file):
     file_lock = threading.Lock()
@@ -46,7 +44,7 @@ check_args()
 try:
     file = open(sys.argv[1], 'w')
 except IOError:
-    abort_prg('wrong filename: ' + sys.argv[1])
+    abort_prg('Can\'t open : ' + sys.argv[1])
 
 pinger(file)
 file.close()
