@@ -38,7 +38,6 @@ def pinger(file):
     for current_ip in threads:
         current_ip.join()
 
-
 check_args()
 
 try:
