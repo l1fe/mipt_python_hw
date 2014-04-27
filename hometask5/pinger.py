@@ -3,61 +3,85 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 import threading
 
-class HelloWorldApp(QWidget):
+class Pinger(QWidget):
     def __init__(self):
-        super(HelloWorldApp, self).__init__()
+        super(Pinger, self).__init__()
 
-        self.init_ui()
+        self.initUI()
 
-    def init_ui(self):
-        self.setFixedSize(300, 300)
+    def initUI(self):
+        self.setFixedSize(500, 500)
         self.setWindowTitle('Pinger')
 
-        self.input_editor = QTextEdit(self)
-        self.input_editor.setFixedSize(150, 200)
-        self.input_editor.move(0, 75)
+        self.inputFile = None
+        self.outputFile = None
 
-        self.output_editor = QTextEdit(self)
-        self.output_editor.setFixedSize(150, 200)
-        self.output_editor.move(150, 75)
+        self.inputEditor = QTextEdit(self)
+        self.inputEditor.setFixedSize(250, 250)
+        self.inputEditor.move(0, 75)
 
-        self.prompt = QLabel(self)
-        self.prompt.setText('List IP\'s there:')
-        self.prompt.move(15, 60)
+        self.outputEditor = QTextEdit(self)
+        self.outputEditor.setFixedSize(250, 250)
+        self.outputEditor.move(250, 75)
 
-        self.buttonPing = QPushButton(self)
-        self.buttonPing.move(105, 0)
-        self.buttonPing.setFixedSize(40, 40)
-        self.buttonPing.setText('Ping!')
-        self.buttonPing.clicked.connect(self.ping)
+        self.inputPrompt = QLabel(self)
+        self.inputPrompt.setText('List IP\'s there:')
+        self.inputPrompt.move(50, 60)
 
-        self.buttonFileDialog = QPushButton(self)
-        self.buttonFileDialog.setFixedSize(80, 40)
-        self.buttonFileDialog.setText('Output file')
-        self.buttonFileDialog.clicked.connect(self.buttonPress)
+        self.outputPrompt = QLabel(self)
+        self.outputPrompt.setText('Result:')
+        self.outputPrompt.move(350, 60)
 
+        self.pingButton = QPushButton(self)
+        self.pingButton.setText('Ping!')
+        self.pingButton.clicked.connect(self.ping)
 
-        self.dialog = QFileDialog(self)
+        self.inputFileButton = QPushButton(self)
+        self.inputFileButton.setText('Input File')
+        self.inputFileButton.clicked.connect(self.showFileDialogInput)
+
+        self.outputFileButton = QPushButton(self)
+        self.outputFileButton.setText('Output File')
+        self.outputFileButton.clicked.connect(self.showFileDialogOutput)
+
+        self.toolbar = QToolBar(self)
+        self.toolbar.setFixedSize(500, 30)
+
+        self.toolbar.addWidget(self.inputFileButton)
+        self.toolbar.addWidget(self.outputFileButton)
+        self.toolbar.addWidget(self.pingButton)
 
         self.show()
 
-    def ping(self):
-        text = self.input_editor.toPlainText()
+    def showFileDialogInput(self):
+        self.inputFile = open(QFileDialog.getOpenFileName(self, 'Input', '', 'Text files (*txt)')[0], 'r')
+        if not self.inputFile is None:
+            self.inputEditor.append(self.inputFile.read())
+        return
 
-        print(text)
+    def showFileDialogOutput(self):
+        self.outputFile = open(QFileDialog.getOpenFileName(self, 'Input', '', 'Text files (*txt)')[0], 'w')
+        return
+
+    def ping(self):
+        text = None
+        if self.inputFile is None:
+            text = self.inputEditor.toPlainText()
+        else:
+            text = self.inputFile.read()
+
+        if text is None:
+            return
+
         print('Checking IP\'s...')
 
         self.check_args(text)
-        try:
-           file = QFileDialog.getOpenFileName()
-        except IOError as e:
-            print(e)
 
         self.pinger(file, text)
 
     def check_args(self, text):
         if not text.strip():
-            self.abort_prg('Input prompt is empty')
+            return
 
         print(text)
         ips = text.split()
@@ -67,40 +91,36 @@ class HelloWorldApp(QWidget):
             ip_expression = re.compile(r'^(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}$')
             if not(ip_expression.match(cur_ip)):
                 print('Wrong ip: ' + cur_ip)
-                self.abort_prg('Incorrect ip:', cur_ip)
+                self.showNotification('Incorrect ip:', cur_ip)
 
-    def pinger(self, file, args):
+    def pinger(self, output, args):
         file_lock = threading.Lock()
         threads = []
         for current_ip in args:
-            threads.append(threading.Thread(target=self.ping_ip, args=(current_ip, file_lock, file)))
+            threads.append(threading.Thread(target=self.ping_ip, args=(current_ip, file_lock, output)))
             threads[-1].start()
 
         for current_ip in threads:
             current_ip.join()
 
-    def ping_ip(self, ip, file_lock, file):
+    def ping_ip(self, ip, file_lock, output):
         import subprocess
         result = subprocess.call(["ping", '-n', '1', ip], stdout = subprocess.PIPE)
 
         file_lock.acquire()
         try:
             if result == 0:
-                file.write(ip + '\n')
+                output += (ip + '\n')
         finally:
             file_lock.release()
 
-    def abort_prg(self, err_msg):
-        msgBox = QMessageBox()
-        msgBox.setWindowTitle('ERROR!')
-        msgBox.setText(err_msg)
-        msgBox.setInformativeText("Retry?")
+    def showNotification(self):
+        return 0
 
-        ret = msgBox.exec_()
 
 def main():
     app = QApplication(sys.argv)
-    ex = HelloWorldApp()
+    ex = Pinger()
     sys.exit(app.exec_())
 
 if __name__ == '__main__':

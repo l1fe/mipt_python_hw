@@ -14,6 +14,7 @@ class PymageViewer(QWidget):
         self.pixMap = None
 
         self.setFixedSize(500, 500)
+        self.setWindowTitle('PyMage')
 
         self.openImageButton = QPushButton()
         self.openImageButton.setText('Open image')
